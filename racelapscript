@@ -1,0 +1,157 @@
+local plr = game.Players.LocalPlayer
+local char = plr.Character
+local rootPart = char:WaitForChild("HumanoidRootPart")
+local stats = plr:WaitForChild("leaderstats")
+
+local storage = game:GetService("ReplicatedStorage")
+local lapEvent = storage:WaitForChild("TimerLapEvent")
+local displayLapEvent = storage:WaitForChild("TimerDisplayLapEvent")
+local addLapEvent = storage:WaitForChild("TimerAddLapEvent")
+local addCcEvent = storage:WaitForChild("TimerAddCcEvent")
+
+local s1 = 0
+local s2 = 0
+local s3 = 0
+local lap = 0
+local bt = 0
+local dt = 0
+local sector = 0
+
+local cc = false
+local cclap = false
+
+local active = false
+
+function GetSplit(value)
+	
+	local output = math.floor(value*1000)/1000
+	
+	return output
+	
+end
+
+function StartLap()
+	
+	bt = elapsedTime()
+	cc = false
+	cclap = false
+	
+end
+
+function TouchSector()
+	
+	if sector < 4 then
+		
+		if sector == 1 then
+			local current = elapsedTime()
+			local split = GetSplit(current-bt)
+			s1 = current
+			s2 = 0
+			s3 = 0
+			lapEvent:FireServer(split,sector,cc)		
+		elseif sector == 2 then
+			local current = elapsedTime()
+			local split = GetSplit(current-s1)
+			s2 = current
+			lapEvent:FireServer(split,sector,cc)
+		elseif sector == 3 then
+			local current = elapsedTime()
+			local split = GetSplit(current-s2)
+			s3 = current
+			lapEvent:FireServer(split,sector,cc)
+		end
+		
+		cc = false
+		
+	else
+		
+		if sector == 4 then
+			local split = GetSplit(elapsedTime()-bt)
+			lapEvent:FireServer(split,sector,cclap)
+		end
+		
+		StartLap()
+		cclap = false
+		cc = false
+		
+	end 	
+	
+end
+
+local function displayLapTime(lap,status)
+	
+	repeat wait() until not active
+	
+	active = true
+	
+	local label = script.Parent.TimeDisplay.Label
+	label.Text = lap
+	if status == 0 then
+		label.BackgroundColor3 = Color3.new(0.3,0,0)
+	elseif status == 1 then
+		label.BackgroundColor3 = Color3.new(0,0,0)
+	elseif status == 2 then
+		label.BackgroundColor3 = Color3.new(0,0.3,0)
+	elseif status == 3 then
+		label.BackgroundColor3 = Color3.new(0.2,0,0.3)
+	end
+	for i = 1, 10 do
+		local x = (1-(i/10))^2
+		label.Position = UDim2.new(0,0,-x,0)
+		wait(0.025)
+	end
+	wait(4)
+	for i = 1, 10 do
+		local x = (i/10)^2
+		label.Position = UDim2.new(0,0,-x,0)
+		wait(0.025)
+	end
+	
+	active = false
+	
+end
+
+rootPart.Touched:connect(function(part)
+	
+	if part.Parent.Name == "Wes_Timing_System_3" and char.Humanoid.Sit then
+		
+		if part.Name == "Start" then
+			
+			if sector == 3 then
+				TouchSector()
+				sector = 4
+				TouchSector()
+				addLapEvent:FireServer()
+			else
+				bt = elapsedTime()
+				cc = false
+				cclap = false
+			end
+			sector = 1
+			
+		elseif part.Name == "S1" and sector == 1 then
+						
+			TouchSector()
+			sector = 2
+			
+		elseif part.Name == "S2" and sector == 2 then
+			
+			TouchSector()
+			sector = 3
+			
+		elseif part.Name == "CC" then
+			
+			cc = true
+			addCcEvent:FireServer()
+			if not cclap then
+				cclap = true
+			end
+			displayLapTime("Warning: Track Extending", 0)
+			
+		end		
+		
+	end
+	
+end)
+
+displayLapEvent.OnClientEvent:connect(displayLapTime)
