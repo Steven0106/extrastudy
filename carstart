@@ -1,0 +1,32 @@
+local mouse = game.Players.LocalPlayer:GetMouse()
+script.Parent.Parent:WaitForChild("Car")
+local car = script.Parent.Parent.Car.Value
+local on = script.Parent.Parent.IsOn
+local pre = script.Parent.Parent.Values.PreOn
+local sound = script.Parent.Start
+local chime = script.Parent.chime
+car.DriveSeat.ChildRemoved:connect(function(child) 
+	if child.Name=="SeatWeld" then 
+		on.Value = false 
+	end 
+end)
+mouse.keyDown:connect(function(k) 
+	if k=="f" then 
+		if not on.Value then
+			script.Parent.TextLabel.Visible=false
+			pre.Value = true
+			sound:Play()
+			wait(2)
+			chime:Play()
+			wait(2)
+			pre.Value = false
+			on.Value = true
+			script.Parent.drive.Visible=true
+			wait(3.0)
+			script.Parent.drive.Visible=false
+		else
+			on.Value = false
+			script.Parent.TextLabel.Visible=true
+		end
+	end 
+end)
